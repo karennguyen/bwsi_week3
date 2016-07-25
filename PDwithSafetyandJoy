@@ -4,66 +4,53 @@
 import rospy
 import math
 import numpy
+
 # node specific imports
 from ackermann_msgs.msg import AckermannDriveStamped # steering messages
 from sensor_msgs.msg import LaserScan, Joy # joystick and laser scanner msgs
 from numpy.core.defchararray import lower
 
-class WallE():
+class Wall():
+    angle = 0
+    right = True #flag that determines which wall to follow
+    death = False
+    errors = [0,0,0]
+    speed = 2
     
-    # variable to return distance to wall from callback
-    # (at 90 and 60 degrees to left of vehicle)
-    #scan = [0.0, 0.0] # Ensure it is created before being used
-    angle=0
-    e1=0
-    e2=0
-    right=True
-    death=False
-    error = []
-    
-    def getIntegral(newError):
-        if len(self.error) > 39:
-            self.error.pop(0)
-        self.error.append(newError)
-        return (i for i in self.error)
+    def getIntegral(self):
+        return sum(self.errors)
 
-    def getError(self,goal,L,begin,end):
-        return goal-(min(L[begin:end]))
-    
-    def clip(self,low,high,value):
-        if high<value:
-            return high
-        elif value<low:
-            return low
-        else:
-            return value
+    def getError(self, goal, L, begin, end):
+        return goal - (min(L[begin:end]))
         
-    #get the angle
-    def getSteeringCmd(self,error,fullLeft,fullRight):
-        Kp =.6
-        Kd = .7
-        de= ((self.e1-self.e2)+(error-self.e1))/.2
-        self.e2=self.e1
-        self.e1=error
-        u=Kp*error+Kd*de
-        return self.clip(fullLeft,fullRight,u)
+    #gets the angle
+    def getSteeringCmd(self, fullLeft, fullRight):
+        Kp = 0.6
+        Kd = 0.7
+        de =  self.errors[-3] - self.errors[-1]
+        u = Kp * self.errors[-1] + Kd * de
+        return u
     
     #passed to the subscriber
-    def callback(self,msg):
+    def callback(self, msg):
         #get the laser information
         if self.right: #right
-            error=self.getError(.75, msg.ranges, 200, 540)
-            self.angle=self.getSteeringCmd(error, -1, 1)
-            self.death=min(msg.ranges[525:555])<.5
-        else: #left
-            error=self.getError(.75, msg.ranges, 540,900)
-            self.angle=self.getSteeringCmd(-error, -1, 1)
-            self.death=min(msg.ranges[525:555])<.5
-
+            error = self.getError(0.3, msg.ranges, 200, 540) #desired distance to be tweaked
+            self.errors.append(error)
+            self.angle = self.getSteeringCmd(error, -1, 1)
+            self.death = min(msg.ranges[525:555]) < 0.5 #safety controller
+        else: #left 
+            error = self.getError(.3, msg.ranges, 540,900) # ^ ^ ^ 
+            self.errors.append(error)
+            self.angle = self.getSteeringCmd(-error, -1, 1)
+            self.death = min(msg.ranges[525:555]) < 0.5
+        
+    #callback for controlling which wall to follow
+    #0 corresponds to 'A' and 1 corresponds to 'B' on game controller
     def callback2(self, msg):
-        if(msg.buttons[0]):
+        if (msg.buttons[0]): #right (A)
             self.right = True
-        elif(msg.buttons[1]):
+        elif (msg.buttons[1]): #left (B)
             self.right = False
         
     def shutdown(self):
@@ -72,9 +59,10 @@ class WallE():
         self.drive.publish(AckermannDriveStamped())
         rospy.sleep(1)
     
+    #function that initializes class
     def __init__(self):
         #setup the node
-        rospy.init_node('wall_bang', anonymous=False)
+        rospy.init_node('wall_bang', anonymous = False)
         rospy.on_shutdown(self.shutdown)
         
         # output messages/sec (also impacts latency)
@@ -82,7 +70,7 @@ class WallE():
         r = rospy.Rate(rate)
         
         # node specific topics (remap on command line or in launch file)
-        self.drive = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size=5)
+        self.drive = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size = 5)
         
         #sets the subscriber
         rospy.Subscriber('scan', LaserScan, self.callback)
@@ -96,35 +84,23 @@ class WallE():
         drive_cmd = AckermannDriveStamped()
         drive_cmd.drive.speed = speed
         drive_cmd.drive.steering_angle = self.angle
-        #r60 = dist_wall / math.cos(math.radians(30.0)) # expected distance if parallel to wall
-        
-        # assume correct vehicle pose (at start)
-        #scan = [dist_wall, r60] 
         
         # main processing loop (runs for pre-determined duration in time travel mode)
         time = dist_trav / speed
         ticks = int(time * rate) # convert drive time to ticks
         for t in range(ticks):
-        #while True:
-            # bang-bang controller for steering direction (single point version - don't use)
-            # turn full left (1.0) or right (-1.0)
-            #drive_cmd.drive.steering_angle = math.copysign(1.0,-(scan[1]-r60))
-            drive_cmd.drive.steering_angle=self.angle
+            drive_cmd.drive.steering_angle = self.angle
             
+            #safety controller
             if self.death:
-                drive_cmd.drive.speed=-.1
-            elif drive_cmd.drive.speed>0:
+                drive_cmd.drive.speed = -0.1
+            elif drive_cmd.drive.speed > 0:
                 drive_cmd.drive.speed = speed
 
             self.drive.publish(drive_cmd) # post this message
-            #Chill out for a bit
-            r.sleep() 
+            r.sleep() #Chill out for a bit
         # always make sure to leave the robot stopped
         self.drive.publish(AckermannDriveStamped())
         
 if __name__ == '__main__':
-#    try:
-    WallE()
-# except:
-#    pass
-#        rospy.loginfo("WallE node terminated.")
+    Wall()
