@@ -4,6 +4,7 @@
 import rospy
 import math
 import numpy
+import sys
 
 # node specific imports
 from ackermann_msgs.msg import AckermannDriveStamped # steering messages
@@ -24,8 +25,8 @@ class Wall():
         
     #gets the angle
     def getSteeringCmd(self, fullLeft, fullRight):
-        Kp = 0.6
-        Kd = 0.7
+        Kp = float(sys.argv[1])
+        Kd = float(sys.argv[2])
         de =  self.errors[-3] - self.errors[-1]
         u = Kp * self.errors[-1] + Kd * de
         return u
