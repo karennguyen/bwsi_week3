@@ -39,12 +39,12 @@ class Wall():
         if self.right: #right
             error = self.getError(0.35, msg.ranges, 200, 540) #desired distance to be tweaked
             self.errors.append(error)
-            self.angle = self.getSteeringCmd(error, -1, 1)
+            self.angle = self.getSteeringCmd(-1, 1)
             self.death = min(msg.ranges[525:555]) < 0.5 #safety controller
         else: #left 
             error = self.getError(.35, msg.ranges, 540,900) # ^ ^ ^ 
             self.errors.append(error)
-            self.angle = self.getSteeringCmd(-error, -1, 1)
+            self.angle = -self.getSteeringCmd(-1, 1) #reverse cause going opposing dir
             self.death = min(msg.ranges[525:555]) < 0.5
         
     #callback for controlling which wall to follow
