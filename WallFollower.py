@@ -32,6 +32,8 @@ class Wall():
     
     #passed to the subscriber
     def laserSteeringCallback(self, msg):
+        if(len(self.error)>39):
+          self.error.pop(0)
         #get the laser information
         if self.right: #right
             error = self.getError(0.3, msg.ranges, 200, 540) #desired distance to be tweaked
@@ -103,6 +105,3 @@ class Wall():
         
 if __name__ == '__main__':
     Wall()
-    
-    
-    
