@@ -37,12 +37,12 @@ class Wall():
           self.errors.pop(0)
         #get the laser information
         if self.right: #right
-            error = self.getError(0.35, msg.ranges, 200, 540) #desired distance to be tweaked
+            error = self.getError(0.45, msg.ranges, 200, 540) #desired distance to be tweaked
             self.errors.append(error)
             self.angle = self.getSteeringCmd(-1, 1)-.1
             self.death = min(msg.ranges[525:555]) < 0.5 #safety controller
         else: #left 
-            error = self.getError(.35, msg.ranges, 540,900) # ^ ^ ^ 
+            error = self.getError(.45, msg.ranges, 540,900) # ^ ^ ^ 
             self.errors.append(error)
             self.angle = -self.getSteeringCmd(-1, 1)-.1 #reverse cause going opposing dir
             self.death = min(msg.ranges[525:555]) < 0.5
