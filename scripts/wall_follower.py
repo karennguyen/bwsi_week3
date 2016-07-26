@@ -2,14 +2,11 @@
 
 # general imports for all python nodes
 import rospy
-import math
-import numpy
 import sys
 
 # node specific imports
 from ackermann_msgs.msg import AckermannDriveStamped # steering messages
 from sensor_msgs.msg import LaserScan, Joy # joystick and laser scanner msgs
-from numpy.core.defchararray import lower
 
 class Wall():
     #this is the variable that holds the angle of the turning: set by 
