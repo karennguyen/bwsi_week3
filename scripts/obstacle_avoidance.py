@@ -33,7 +33,7 @@ class Avoid():
 	**does this by sending a callback to your computer
 	'''
 
-	def callback(scan):
+	def callback(self, scan):
 		center_index = self.findLargestSpace(scan.ranges[180:900], 1.5) #180 deg; in front of the bot
         
 		self.error = 540 - center_index
@@ -69,15 +69,20 @@ class Avoid():
 			newL.append(i > threshold)
 		    
 		#go through and find the largest free space
+
+		
+
 	    	for i in range(len(newL)):
 			if(newL[i]):
 				count = 0
-		    	while newL[i]:
-				count += 1
-		        	i += 1
-		    	if(count > largestSpace):
-		        	largestSpace = count
-		        	center = (count / 2) + i
+		    		while newL[i]:
+					count += 1
+		        		i += 1
+					if(i>=len(newL)):
+						break
+		    		if(count > largestSpace):
+		        		largestSpace = count
+		        		center = (count / 2) + i
 	    	return center # a point out of 1081
       
 	def shutdown(self):
