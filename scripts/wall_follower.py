@@ -56,7 +56,7 @@ class Wall():
             
             self.errors.append(error)
             
-            self.angle = self.getSteeringCmd(-1, 1)-.1 #subtracting to align the wheels to u=0 being straight
+            self.angle = self.getSteeringCmd(-1, 1)+.1 #add to align the wheels to u=0 being straight
             
             self.death = min(msg.ranges[525:555]) < 0.5 #safety controller
             
@@ -66,7 +66,7 @@ class Wall():
             
             self.errors.append(error)
             
-            self.angle = -self.getSteeringCmd(-1, 1)-.1 #reverse cause going opposing dir
+            self.angle = -self.getSteeringCmd(-1, 1)+.1 #reverse cause going opposing dir
             
             self.death = min(msg.ranges[525:555]) < 0.5 #safety controller
         
