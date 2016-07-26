@@ -73,15 +73,15 @@ class Wall():
     '''
     callback for controlling which wall to follow
     
-    A goes right
-    B goes left
+    A goes left
+    B goes right
     '''
     def sideSwitchCallback(self, msg):
         
         #0 corresponds to 'A' and 1 corresponds to 'B' on game controller
-        if (msg.buttons[0]): #right (A)
+        if (msg.buttons[1]): #right (B)
             self.right = True
-        elif (msg.buttons[1]): #left (B)
+        elif (msg.buttons[0]): #left (A)
             self.right = False
         
     '''
@@ -130,8 +130,10 @@ class Wall():
             
             #safety controller
             if self.death:
+                print "Dead"
                 drive_cmd.drive.speed = -0.1
             elif drive_cmd.drive.speed > 0:
+                print self.angle
                 drive_cmd.drive.speed = speed
 
             self.drive.publish(drive_cmd) # post this message
