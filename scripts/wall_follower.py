@@ -13,6 +13,7 @@ class Wall():
     angle = 0
     right = True #flag that determines which wall to follow
     death = False
+    speed=2
     #initializes the last three errors. I do this to allow the getSteeringCmd method to find the de and "previous" e
     errors = [0,0,0]
     
@@ -69,6 +70,19 @@ class Wall():
             self.angle = -self.getSteeringCmd(-1, 1)+.1 #reverse cause going opposing dir
             
             self.death = min(msg.ranges[525:555]) < 0.5 #safety controller
+            
+        
+        self.drive_cmd.drive.steering_angle = self.angle
+            
+        #safety controller
+        if self.death:
+            print "Dead"
+            self.drive_cmd.drive.speed = -0.1
+        elif self.drive_cmd.drive.speed > 0:
+            print self.angle
+            self.drive_cmd.drive.speed = self.speed
+
+        self.drive.publish(self.drive_cmd) # post this message
         
     '''
     callback for controlling which wall to follow
@@ -104,7 +118,6 @@ class Wall():
         
         # output messages/sec (also impacts latency)
         rate = 10 
-        r = rospy.Rate(rate)
         
         # node specific topics (remap on command line or in launch file)
         self.drive = rospy.Publisher('/vesc/ackermann_cmd_mux/input/navigation', AckermannDriveStamped, queue_size = 5)
@@ -113,32 +126,13 @@ class Wall():
         rospy.Subscriber('scan', LaserScan, self.laserSteeringCallback)
         rospy.Subscriber('vesc/joy', Joy, self.sideSwitchCallback)
         
-        # set control parameters
-        speed = .6 # constant travel speed in meters/second
-        dist_trav = 20000.0 # meters to travel in time travel mode
         
         # fill out fields in ackermann steering message (to go straight)
-        drive_cmd = AckermannDriveStamped()
-        drive_cmd.drive.speed = speed
-        drive_cmd.drive.steering_angle = self.angle
+        self.drive_cmd = AckermannDriveStamped()
+        self.drive_cmd.drive.speed = self.speed
+        self.drive_cmd.drive.steering_angle = self.angle
         
-        # main processing loop (runs for pre-determined duration in time travel mode)
-        time = dist_trav / speed
-        ticks = int(time * rate) # convert drive time to ticks
-        for t in range(ticks):
-            drive_cmd.drive.steering_angle = self.angle
-            
-            #safety controller
-            if self.death:
-                print "Dead"
-                drive_cmd.drive.speed = -0.1
-            elif drive_cmd.drive.speed > 0:
-                print self.angle
-                drive_cmd.drive.speed = speed
-
-            self.drive.publish(drive_cmd) # post this message
-            r.sleep() #Chill out for a bit
-        # always make sure to leave the robot stopped
+        rospy.spin()
         self.drive.publish(AckermannDriveStamped())
         
 if __name__ == '__main__':
