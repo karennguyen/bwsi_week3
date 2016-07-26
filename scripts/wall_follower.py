@@ -50,7 +50,7 @@ class Wall():
             self.errors.pop(0)
           
           
-        #get the laser information
+        #get the laser information.
         if self.right: #right
             
             error = self.getError(0.45, msg.ranges, 200, 540) #TODO tweak range
