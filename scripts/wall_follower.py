@@ -12,18 +12,30 @@ from sensor_msgs.msg import LaserScan, Joy # joystick and laser scanner msgs
 from numpy.core.defchararray import lower
 
 class Wall():
+    #this is the variable that holds the angle of the turning: set by 
     angle = 0
     right = True #flag that determines which wall to follow
     death = False
+    #initializes the last three errors. I do this to allow the getSteeringCmd method to find the de and "previous" e
     errors = [0,0,0]
     
+    '''
+    Finds the integral of the error in the floating frame
+    
+    '''
     def getIntegral(self):
         return sum(self.errors)
 
+    '''
+    Finds the error given a goal, list, and slice
+    
+    '''
     def getError(self, goal, L, begin, end):
         return goal - (min(L[begin:end]))
         
-    #gets the angle
+    '''
+    Finds the angle to steer at using the full left and full right parameters
+    '''
     def getSteeringCmd(self, fullLeft, fullRight):
         Kp = float(sys.argv[1])
         Kd = float(sys.argv[2])
@@ -31,37 +43,63 @@ class Wall():
         u = Kp * self.errors[-1] + Kd * de
         return u
     
-    #passed to the subscriber
+    '''
+    Call back in charge of reading laser scan data and responding by setting the drive angle and death if too close
+    '''
     def laserSteeringCallback(self, msg):
+        #Set the floating frame time (over the last 40 scans which is about 1 second
         if(len(self.errors)>39):
-          self.errors.pop(0)
+            self.errors.pop(0)
+          
+          
         #get the laser information
         if self.right: #right
-            error = self.getError(0.45, msg.ranges, 200, 540) #desired distance to be tweaked
+            
+            error = self.getError(0.45, msg.ranges, 200, 540) #TODO tweak range
+            
             self.errors.append(error)
-            self.angle = self.getSteeringCmd(-1, 1)-.1
+            
+            self.angle = self.getSteeringCmd(-1, 1)-.1 #subtracting to align the wheels to u=0 being straight
+            
             self.death = min(msg.ranges[525:555]) < 0.5 #safety controller
+            
         else: #left 
-            error = self.getError(.45, msg.ranges, 540,900) # ^ ^ ^ 
+            
+            error = self.getError(.45, msg.ranges, 540,900) #TODO tweak range
+            
             self.errors.append(error)
+            
             self.angle = -self.getSteeringCmd(-1, 1)-.1 #reverse cause going opposing dir
-            self.death = min(msg.ranges[525:555]) < 0.5
+            
+            self.death = min(msg.ranges[525:555]) < 0.5 #safety controller
         
-    #callback for controlling which wall to follow
-    #0 corresponds to 'A' and 1 corresponds to 'B' on game controller
+    '''
+    callback for controlling which wall to follow
+    
+    A goes right
+    B goes left
+    '''
     def sideSwitchCallback(self, msg):
+        
+        #0 corresponds to 'A' and 1 corresponds to 'B' on game controller
         if (msg.buttons[0]): #right (A)
             self.right = True
         elif (msg.buttons[1]): #left (B)
             self.right = False
         
+    '''
+    Runs when the node dies
+    '''
     def shutdown(self):
         rospy.loginfo("Stopping the robot...")
+        
         # always make sure to leave the robot stopped
         self.drive.publish(AckermannDriveStamped())
         rospy.sleep(1)
     
-    #function that initializes class
+    '''
+    Initializes the class and runs the drive publisher
+    '''
     def __init__(self):
         #setup the node
         rospy.init_node('wall_bang', anonymous = False)
@@ -80,7 +118,7 @@ class Wall():
         
         # set control parameters
         speed = 2.0 # constant travel speed in meters/second
-        dist_trav = 2000.0 # meters to travel in time travel mode
+        dist_trav = 20000.0 # meters to travel in time travel mode
         
         # fill out fields in ackermann steering message (to go straight)
         drive_cmd = AckermannDriveStamped()
@@ -91,6 +129,7 @@ class Wall():
         time = dist_trav / speed
         ticks = int(time * rate) # convert drive time to ticks
         for t in range(ticks):
+            print (t*100)/ticks
             drive_cmd.drive.steering_angle = self.angle
             
             #safety controller
