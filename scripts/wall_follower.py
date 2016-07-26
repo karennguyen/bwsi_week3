@@ -90,7 +90,7 @@ class Wall():
     def shutdown(self):
         rospy.loginfo("Stopping the robot...")
         
-        # always make sure to leave the robot stopped
+        #always make sure to leave the robot stopped
         self.drive.publish(AckermannDriveStamped())
         rospy.sleep(1)
     
