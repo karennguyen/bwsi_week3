@@ -126,7 +126,6 @@ class Wall():
         time = dist_trav / speed
         ticks = int(time * rate) # convert drive time to ticks
         for t in range(ticks):
-            print (t*100)/ticks
             drive_cmd.drive.steering_angle = self.angle
             
             #safety controller
