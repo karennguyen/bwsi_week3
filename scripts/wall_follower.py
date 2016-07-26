@@ -114,7 +114,7 @@ class Wall():
         rospy.Subscriber('vesc/joy', Joy, self.sideSwitchCallback)
         
         # set control parameters
-        speed = 2.0 # constant travel speed in meters/second
+        speed = .6 # constant travel speed in meters/second
         dist_trav = 20000.0 # meters to travel in time travel mode
         
         # fill out fields in ackermann steering message (to go straight)
