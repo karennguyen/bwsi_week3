@@ -16,7 +16,7 @@ class Avoid():
 		self.speed = 0
 		self.steering_angle = 0
 		
-		self.safety_threshold = 0.5
+		self.safety_threshold = 0.35
 
 		rospy.init_node("avoid_node") 
 		
@@ -35,22 +35,22 @@ class Avoid():
 
 	def callback(self, scan):
 		center_index = self.findLargestSpace(scan.ranges[180:900], 1.5) #180 deg; in front of the bot
-        
+        	
 		self.error = 540 - center_index
-		self.steering_angle = self.Kp * self.error + self.Kd * (self.error - self.last_error)
+		self.steering_angle = -1 * (self.Kp * self.error + self.Kd * (self.error - self.last_error))
 		self.last_error = self.error
 		
 		#safety
 		if(min(scan.ranges[525:555]) < self.safety_threshold):
 			print "Killed"
-			self.speed = -0.1
+			self.speed = -0.3
 		else:
-			self.speed = 2.0
+			self.speed = 0.5
 		
 		msg = AckermannDriveStamped()
 		msg.drive.speed = self.speed
 		msg.drive.steering_angle = self.steering_angle
-		
+		print "Read: %i , Response:%f" % (center_index,self.steering_angle)
 		self.pub.publish(msg)
         
         	

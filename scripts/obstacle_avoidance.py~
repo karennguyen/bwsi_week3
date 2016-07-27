@@ -16,7 +16,7 @@ class Avoid():
 		self.speed = 0
 		self.steering_angle = 0
 		
-		self.safety_threshold = 0.5
+		self.safety_threshold = 0.35
 
 		rospy.init_node("avoid_node") 
 		
@@ -33,11 +33,11 @@ class Avoid():
 	**does this by sending a callback to your computer
 	'''
 
-	def callback(scan):
+	def callback(self, scan):
 		center_index = self.findLargestSpace(scan.ranges[180:900], 1.5) #180 deg; in front of the bot
-        
+        	
 		self.error = 540 - center_index
-		self.steering_angle = self.Kp * self.error + self.Kd * (self.error - self.last_error)
+		self.steering_angle = -1 * (self.Kp * self.error + self.Kd * (self.error - self.last_error))
 		self.last_error = self.error
 		
 		#safety
@@ -45,12 +45,12 @@ class Avoid():
 			print "Killed"
 			self.speed = -0.1
 		else:
-			self.speed = 2.0
+			self.speed = 0.5
 		
 		msg = AckermannDriveStamped()
 		msg.drive.speed = self.speed
 		msg.drive.steering_angle = self.steering_angle
-		
+		print "Read: %i , Response:%f" % (center_index,self.steering_angle)
 		self.pub.publish(msg)
         
         	
@@ -69,15 +69,20 @@ class Avoid():
 			newL.append(i > threshold)
 		    
 		#go through and find the largest free space
+
+		
+
 	    	for i in range(len(newL)):
 			if(newL[i]):
 				count = 0
-		    	while newL[i]:
-				count += 1
-		        	i += 1
-		    	if(count > largestSpace):
-		        	largestSpace = count
-		        	center = (count / 2) + i
+		    		while newL[i]:
+					count += 1
+		        		i += 1
+					if(i>=len(newL)):
+						break
+		    		if(count > largestSpace):
+		        		largestSpace = count
+		        		center = (count / 2) + i
 	    	return center # a point out of 1081
       
 	def shutdown(self):
@@ -85,6 +90,6 @@ class Avoid():
 		rospy.sleep(1)
 
 if __name__ == '__main__':
-	Avoid(sys.argv[1], sys.argv[2])
+	Avoid(float(sys.argv[1]), float(sys.argv[2]))
 	rospy.spin()
     
