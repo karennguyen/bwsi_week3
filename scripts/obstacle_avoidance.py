@@ -90,6 +90,6 @@ class Avoid():
 		rospy.sleep(1)
 
 if __name__ == '__main__':
-	Avoid(sys.argv[1], sys.argv[2])
+	Avoid(float(sys.argv[1]), float(sys.argv[2]))
 	rospy.spin()
     
