@@ -13,39 +13,37 @@ class ZedCamPub:
 	def __init__(self):
 		self.bridge = CvBridge() #allows us to convert our image to cv2
 
-		self.color_pub = rsp.Publisher("/exploring_challenge", String, queue_size=10 #published a string saying the color of the detected blob
-        
+		self.color_pub = rsp.Publisher("/exploring_challenge", String, queue_size=10 )#published a string saying the color of the detected blob
+			
 		self.zed_img = rsp.Subscriber("/camera/rgb/image_rect_color", Image, self.detect_img) #subscribes to the ZED camera image
-                                       
-      	self.odom_sub = rsp.Subscriber("/vesc/odom", Odometry, self.odom_callback)
-        self.last_arb_position = Point()
-        self.gone_far_enough = False
-        
-        self.initialTime = time.time.now()
-        self.heightThresh = 400 #unit pixels MUST TWEAK
-        self.odomThresh = 1 #unit meters
+		                               
+	      	self.odom_sub = rsp.Subscriber("/vesc/odom", Odometry, self.odom_callback)
+		self.last_arb_position = Point()
+		self.gone_far_enough = False
+
+		self.heightThresh = 400 #unit pixels MUST TWEAK
+		self.odomThresh = 1 #unit meters
 		rsp.init_node("color_pub")
                                        
-    def odom_callback(self, odom): #odom callback
-        dist = math.sqrt((self.last_arb_position.x.data - odom.pose.pose.position.x.data)**2 + (self.last_arb_position.y.data - odom.pose.pose.position.y.data)**2)                               
-        if(dist > 1):#if moved a meter since last
-        	self.gone_far_enough = True
-                                       
-        	self.last_arb_position.x.data = odom.pose.pose.position.x.data
-        	self.last_arb_position.y.data = odom.pose.pose.position.y.data
-        else:
-      		self.gone_far_enough = False
+    	def odom_callback(self, odom): #odom callback
+        	dist = math.sqrt((self.last_arb_position.x.data - odom.pose.pose.position.x.data)**2 + (self.last_arb_position.y.data - odom.pose.pose.position.y.data)**2)                               
+        	if(dist > 1):#if moved a meter since last
+        		self.gone_far_enough = True               
+        		self.last_arb_position.x.data = odom.pose.pose.position.x.data
+        		self.last_arb_position.y.data = odom.pose.pose.position.y.data
+        	else:
+      			self.gone_far_enough = False
                                        
 	def detect_img(self, img): #image callback
-        if(not self.gone_far_enough):
-        	return
+        	if(not self.gone_far_enough):
+        		return
 		rsp.loginfo("Image found!")
 
 		img_data = self.bridge.imgmsg_to_cv2(img) #changing image to cv2
 
 		processed_img_cv2 = self.process_img(img_data) #passing image to process_img function
 		processed_img = self.bridge.cv2_to_imgmsg(processed_img_cv2, "bgr8") #convert image back to regular format (.png?)
-        cv2.iamwrite("/home/racecar/challenge_photos/", processed_img)
+        	cv2.imwrite("/home/racecar/challenge_photos/", processed_img)
 
 	def process_img(self, img):
 		hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV) #converting to HSV
@@ -95,7 +93,7 @@ class ZedCamPub:
 	 	maskYellow = cv2.inRange(hsv, yellow_bounds[0], yellow_bounds[1])
 		contours_yellow, hierarchy_yellow = cv2.findContours(maskYellow, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
-        #BLUE
+        	#BLUE
 		hue_blue_min = 96
 		hue_blue_max = 252
 
@@ -109,38 +107,36 @@ class ZedCamPub:
 		
 	 	maskBlue = cv2.inRange(hsv, blue_bounds[0], blue_bounds[1])
 		contours_blue, hierarchy_blue = cv2.findContours(maskBlue, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        
-        mainBlobColor = "red" #this is the default initialization for the string that we will publish to the /exploring_challenge topic
-                                    
-        contour_list = [contours_red, contours_green, contours_yellow, contours_blue]
-        string_list = ["red", "green", "yellow", "blue"]
+                   
+        	contour_list = [contours_red, contours_green, contours_yellow, contours_blue]
+        	string_list = ["red", "green", "yellow", "blue"]
                                        
 		try:
-            for i in len(contour_list):
-              if len(contour_list[i]) != 0:
-                  contArea = [(cv2.contourArea(c), (c) ) for c in contour_list]
-                  contArea = sorted(contArea, reverse = True, key = lambda x: x[0])
+            		for i in len(contour_list):
+             	 		if len(contour_list[i]) != 0:
+                  			contArea = [(cv2.contourArea(c), (c) ) for c in contour_list]
+                  			contArea = sorted(contArea, reverse = True, key = lambda x: x[0])
 
-                  M = cv2.moments(contArea[0][1])
-                  contour_height = M['m01']
+                  			M = cv2.moments(contArea[0][1])
+                  			contour_height = M['m01']
                                        
-                  if  contour_height > self.heightThresh: #right now im just doing area as the threshold because it's much easier
-                      cont = contRedArea[0][1] 
-                      self.color_pub.publish(string_list[i])
-                      cv2.drawContours(img, cont, -1, (120, 0, 0), 4) #unecessary? We are also drawing a rectangle
+                  			if  contour_height > self.heightThresh: #right now im just doing area as the threshold because it's much easier
+                     				cont = contRedArea[0][1] 
+                      				self.color_pub.publish(string_list[i])
+                      				cv2.drawContours(img, cont, -1, (120, 0, 0), 4) #unecessary? We are also drawing a rectangle
 
-                      if M['m00'] != 0:
-                          cx = int(M['m10']/M['m00'])
-                          cy = int(M['m01']/M['m00'])
-                                       
-                          center = (cx, cy)
-                          cv2.circle(img, center, 5, (60, 0, 0), -1)
-                          #rect
-                          x, y, w, h = cv2.boundingRect(cont)	
-                          cv2.rectangle(img, (x, y), (x + w, y + h), (100, 50, 50), 2)
+                      				if M['m00'] != 0:
+		                  			cx = int(M['m10']/M['m00'])
+		                  			cy = int(M['m01']/M['m00'])
+		                               
+		                  			center = (cx, cy)
+		                  			cv2.circle(img, center, 5, (60, 0, 0), -1)
+		                  			#rect
+		                  			x, y, w, h = cv2.boundingRect(cont)	
+		                  			cv2.rectangle(img, (x, y), (x + w, y + h), (100, 50, 50), 2)
 
-                          font = cv2.FONT_HERSHEY_SIMPLEX
-                          cv2.putText(img, mainBlobColor, center, font, 1, mean_color, 4)
+		                  			font = cv2.FONT_HERSHEY_SIMPLEX
+		                  			cv2.putText(img, mainBlobColor, center, font, 1, mean_color, 4)
                 
 		except Exception, e:
 			print str(e)
