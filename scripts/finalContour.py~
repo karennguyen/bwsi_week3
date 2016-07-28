@@ -30,7 +30,7 @@ class ZedCamPub:
         	dist = math.sqrt((self.last_arb_position.x - odom.pose.pose.position.x)**2 + (self.last_arb_position.y - odom.pose.pose.position.y)**2)                               
         	if(dist > 1):#if moved a meter since last
         		self.gone_far_enough = True               
-        		self.last_arb_position.x = odom.pose.pose.position.x
+        		self.last_arb_position.x = odom.pose.pose.position.x.
         		self.last_arb_position.y = odom.pose.pose.position.y
         	else:
       			self.gone_far_enough = False
