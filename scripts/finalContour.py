@@ -52,20 +52,34 @@ class ZedCamPub:
 
 		contours_green, hierarchy_green = cv2.findContours(maskGreen, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-		hue_red_min1 = 225
-		hue_red_max1 = 250
+		#red stuff
+		hue_red_min = 225
+		hue_red_max = 250
 
-		sat_red_min1 = .8
-		sat_red_max1 = 1
+		sat_red_min = .8
+		sat_red_max = 1
 
-		val_red_min1 = .7
-		val_red_max1 = 1
+		val_red_min = .7
+		val_red_max = 1
 		
-	 	maskRed1 = cv2.inRange(hsv, np.array([hue_red_min1 / 2, int(sat_red_min1 * 255), int(val_red_min1 * 255)]), np.array([hue_red_max1 / 2, int(sat_red_max1 * 255), int(val_red_max1 * 255)]))
+	 	maskRed = cv2.inRange(hsv, np.array([hue_red_min / 2, int(sat_red_min * 255), int(val_red_min * 255)]), np.array([hue_red_max / 2, int(sat_red_max * 255), int(val_red_max * 255)]))
 
 		contours_red, hierarchy_red = cv2.findContours(maskRed1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 		
+		#Yelow stuff
+		hue_yellow_min = 225
+		hue_yellow_max = 250
 
+		sat_yellow_min = .8
+		sat_yellow_max = 1
+
+		val_yellow_min = .7
+		val_yellow_max = 1
+		
+	 	maskYellow = cv2.inRange(hsv, np.array([hue_yellow_min / 2, int(sat_yellow_min * 255), int(val_yellow_min * 255)]), np.array([hue_yellow_max / 2, int(sat_yellow_max * 255), int(val_yellow_max * 255)]))
+
+		contours_yellow, hierarchy_yellow = cv2.findContours(maskYellow1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+		
 		try:		
 			if len(contours_green) == 0:
 				contRedArea = [ (cv2.contourArea(c), (c) ) for c in contours_red]
@@ -81,10 +95,10 @@ class ZedCamPub:
 				contRedArea = [ (cv2.contourArea(c), (c) ) for c in contours_red]
 				contRedArea = sorted(contRedArea, reverse=True, key=lambda x: x[0])
 				
-			if( max(contGreenArea[0][0], contRedArea[0][0]) == contGreenArea[0,0]):
-				officCont = contGreenArea[0][1]
-			else:
-				officCont = contRedArea[0][1]
+				if( max(contGreenArea[0][0], contRedArea[0][0]) == contGreenArea[0,0]):
+					officCont = contGreenArea[0][1]
+				else:
+					officCont = contRedArea[0][1]
 
 			cv2.drawContours(img, officCont, -1, (120, 0, 0), 4)
 			MGr = cv2.moments(officCont)
