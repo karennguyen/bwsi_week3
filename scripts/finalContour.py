@@ -12,9 +12,11 @@ import math
 class ZedCamPub:
 
 	def __init__(self):
+		print ("init")
 		self.bridge = CvBridge() #allows us to convert our image to cv2
 
 		self.color_pub = rsp.Publisher("/exploring_challenge", String, queue_size=10 )#published a string saying the color of the detected blob
+		self.zed_pub = rsp.Publisher("/image_echo", Image, queue_size=10)
 			
 		self.zed_img = rsp.Subscriber("/camera/rgb/image_rect_color", Image, self.detect_img) #subscribes to the ZED camera image
 		                               
@@ -45,6 +47,7 @@ class ZedCamPub:
 		processed_img_cv2 = self.process_img(img_data) #passing image to process_img function
 		processed_img = self.bridge.cv2_to_imgmsg(processed_img_cv2, "bgr8") #convert image back to regular format (.png?)
         	cv2.imwrite("/home/racecar/challenge_photos/", processed_img)
+		self.zed_pub.publish(img_data)
 
 	def process_img(self, img):
 		hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV) #converting to HSV
@@ -114,6 +117,7 @@ class ZedCamPub:
                                        
 		try:
             		for i in len(contour_list):
+				print ("contours found")
              	 		if len(contour_list[i]) != 0:
                   			contArea = [(cv2.contourArea(c), (c) ) for c in contour_list]
                   			contArea = sorted(contArea, reverse = True, key = lambda x: x[0])
@@ -123,6 +127,7 @@ class ZedCamPub:
                                        
                   			if  contour_height > self.heightThresh: #right now im just doing area as the threshold because it's much easier
                      				cont = contRedArea[0][1] 
+						print (string_list[i] , "found")
                       				self.color_pub.publish(string_list[i])
                       				cv2.drawContours(img, cont, -1, (120, 0, 0), 4) #unecessary? We are also drawing a rectangle
 
