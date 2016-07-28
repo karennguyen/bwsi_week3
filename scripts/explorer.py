@@ -78,9 +78,7 @@ class Explorer():
 			self.stuck = True
 		elif (self.stuck): #if it is stuck and the time has not elapsed
 			print 'Is Stuck'
-			if rospy.get_time() - self.stuck_time < self.stuck_threshold:
-		    		#speed = -0.7
-			else:
+			if not rospy.get_time() - self.stuck_time < self.stuck_threshold:
 		    		self.stuck = False
 		  
 		self.speeds.append(speed)
