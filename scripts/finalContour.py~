@@ -39,6 +39,7 @@ class ZedCamPub:
 	def detect_img(self, img): #image callback
         	if(not self.gone_far_enough):
         		return
+		rsp.loginfo("Image found!")
 
 		img_data = self.bridge.imgmsg_to_cv2(img) #changing image to cv2
 

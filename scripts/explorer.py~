@@ -66,6 +66,7 @@ class Explorer():
 		cmd = self.get_driving_info(scan.ranges[180:900]) #returns a tuple with the speed and angle 
 		speed = cmd[0] #information given by the method
 		angle = cmd[1]
+        	print 'Speed: ' , speed ,'Angle: ' , angle
         
 		if (min(scan.ranges[525:555]) < self.safety_threshold):
 		  	print "Robot suicide RIP"
